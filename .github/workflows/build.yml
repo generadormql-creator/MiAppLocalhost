@@ -20,13 +20,13 @@ jobs:
 
       - name: 3. Localizar Android SDK y Compilar
         run: |
-          # Usamos la variable de entorno oficial de GitHub para el SDK
+          # 1. Encontrar el SDK de Android
           $sdkPath = "$env:ANDROID_SDK_ROOT\platforms"
           $androidJar = Get-ChildItem -Path $sdkPath -Filter "android.jar" -Recurse | Select-Object -First 1 -ExpandProperty FullName
-          
           Write-Host "SDK encontrado en: $androidJar"
           
-          # Ejecutamos tu compilador
+          # 2. Ejecutar la compilación
+          # Usamos .\B4ABuilder.exe porque está en la raíz
           .\B4ABuilder.exe -Task=Build -Project=Proyecto.b4p -Args="-v -SystemJar=$androidJar -AdditionalLibraries=."
 
       - name: 4. Entregar APK para descargar
