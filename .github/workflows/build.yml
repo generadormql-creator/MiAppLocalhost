@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest # Cambiamos a Windows porque B4A es nativo de ahí
+    runs-on: windows-latest
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
@@ -25,12 +25,14 @@ jobs:
 
       - name: Compilar APK
         run: |
-          # Aquí el comando para compilar usando el builder oficial
-          # Nota: Asegúrate que el nombre Proyecto.b4p sea idéntico al que subiste
-          .\B4ABuilder\B4ABuilder.exe -Task=Build -Project=Proyecto.b4p
+          # Buscamos el android.jar en el servidor de GitHub automáticamente
+          $androidJar = Get-ChildItem -Path "C:\Microsoft\AndroidSDK\25\platforms" -Filter "android.jar" -Recurse | Select-Object -First 1 -ExpandProperty FullName
+          
+          # Ejecutamos el compilador pasando la ruta del SDK
+          .\B4ABuilder\B4ABuilder.exe -Task=Build -Project=Proyecto.b4p -Args="-v -SystemJar=$androidJar"
 
       - name: Subir APK
         uses: actions/upload-artifact@v4
         with:
           name: MiApp_Instalable
-          path: Objects/*.apk
+          path: "**/*.apk"
