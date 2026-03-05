@@ -12,12 +12,33 @@ jobs:
       - name: Checkout del código
         uses: actions/checkout@v4
 
-      - name: Configurar B4A y Compilar
-        # Usamos una acción mantenida que ya conoce las rutas de Android en GitHub
-        uses: sstsoft/b4a-action@v1.1
+      - name: Instalar Java 8
+        uses: actions/setup-java@v4
         with:
-          project_file: 'Proyecto.b4p' # Asegúrate de que este nombre sea exacto al de tu archivo
+          java-version: '8'
+          distribution: 'temurin'
+
+      - name: Descargar B4A Builder y Librerias
+        run: |
+          # Descargamos el compilador oficial de la línea de comandos
+          Invoke-WebRequest -Uri "https://www.b4x.com/android/files/b4abuilder.zip" -OutFile "B4ABuilder.zip"
+          Expand-Archive -Path "B4ABuilder.zip" -DestinationPath "B4ABuilder"
           
+          # Creamos la carpeta de librerías adicionales
+          New-Item -ItemType Directory -Path "AdditionalLibs"
+          
+          # NOTA: Aquí GitHub descargará las librerías necesarias si no las subiste
+          # Si tienes los archivos .jar y .xml de HttpServer, asegúrate de que estén en tu repositorio
+
+      - name: Compilar APK
+        run: |
+          # Buscamos el android.jar en el sistema de GitHub
+          $androidJar = Get-ChildItem -Path "C:\Microsoft\AndroidSDK\25\platforms" -Filter "android.jar" -Recurse | Select-Object -First 1 -ExpandProperty FullName
+          
+          # Ejecutamos la compilación
+          # Ajustamos el nombre del proyecto a Proyecto.b4p (asegúrate de que coincida con tu archivo)
+          .\B4ABuilder\B4ABuilder.exe -Task=Build -Project=Proyecto.b4p -Args="-v -SystemJar=$androidJar -AdditionalLibraries=AdditionalLibs"
+
       - name: Subir APK
         uses: actions/upload-artifact@v4
         with:
