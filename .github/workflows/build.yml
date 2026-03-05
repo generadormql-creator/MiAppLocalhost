@@ -20,14 +20,13 @@ jobs:
 
       - name: 3. Ejecutar Compilador (.bat)
         run: |
-          # Encontramos la ruta del SDK de Android
-          $sdkPath = "$env:ANDROID_SDK_ROOT\platforms"
-          $androidJar = Get-ChildItem -Path $sdkPath -Filter "android.jar" -Recurse | Select-Object -First 1 -ExpandProperty FullName
+          # Obtenemos la ruta del SDK (usamos la API 33 o 34 que ya vimos que existe)
+          $androidJar = Get-ChildItem -Path "$env:ANDROID_SDK_ROOT\platforms" -Filter "android.jar" -Recurse | Select-Object -First 1 -ExpandProperty FullName
           
-          Write-Host "Iniciando proceso por lote con SDK: $androidJar"
+          Write-Host "Enviando al BAT la ruta: $androidJar"
           
-          # Llamamos al archivo .bat pasando la ruta del SDK entre comillas dobles
-          cmd.exe /c "compilar.bat `"$androidJar`""
+          # Llamada limpia al BAT
+          cmd.exe /c "compilar.bat $androidJar"
 
       - name: 4. Subir APK
         uses: actions/upload-artifact@v4
