@@ -18,16 +18,16 @@ jobs:
           java-version: '8'
           distribution: 'temurin'
 
-      - name: 3. Localizar Android SDK y Compilar
+      - name: 3. Compilar APK
         run: |
-          # 1. Encontrar el SDK de Android
+          # Obtenemos la ruta y la forzamos a un formato que el Builder entienda
           $sdkPath = "$env:ANDROID_SDK_ROOT\platforms"
           $androidJar = Get-ChildItem -Path $sdkPath -Filter "android.jar" -Recurse | Select-Object -First 1 -ExpandProperty FullName
-          Write-Host "SDK encontrado en: $androidJar"
           
-          # 2. Ejecutar la compilación
-          # Usamos .\B4ABuilder.exe porque está en la raíz
-          .\B4ABuilder.exe -Task=Build -Project=Proyecto.b4p -Args="-v -SystemJar=$androidJar -AdditionalLibraries=."
+          Write-Host "Iniciando compilación con SDK: $androidJar"
+
+          # Ejecución con comillas reforzadas para evitar el error de "Parsing"
+          .\B4ABuilder.exe -Task=Build "-Project=Proyecto.b4p" "-Args=-v -SystemJar=$androidJar -AdditionalLibraries=."
 
       - name: 4. Entregar APK para descargar
         uses: actions/upload-artifact@v4
