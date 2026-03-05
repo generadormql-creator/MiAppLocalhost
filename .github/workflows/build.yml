@@ -9,36 +9,26 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Checkout del código
+      - name: 1. Descargar archivos del repositorio
         uses: actions/checkout@v4
 
-      - name: Instalar Java 8
+      - name: 2. Configurar Java 8
         uses: actions/setup-java@v4
         with:
           java-version: '8'
           distribution: 'temurin'
 
-      - name: Descargar B4A Builder y Librerias Faltantes
+      - name: 3. Localizar Android SDK y Compilar
         run: |
-          # Descargamos el compilador
-          Invoke-WebRequest -Uri "https://www.b4x.com/android/files/b4abuilder.zip" -OutFile "B4ABuilder.zip"
-          Expand-Archive -Path "B4ABuilder.zip" -DestinationPath "B4ABuilder"
-          
-          # DESCARGAR JAVAOBJECT (Ya que no la tienes)
-          Invoke-WebRequest -Uri "https://www.b4x.com/android/files/JavaObject.zip" -OutFile "JavaObject.zip"
-          Expand-Archive -Path "JavaObject.zip" -DestinationPath "."
-          # Esto dejará JavaObject.jar y JavaObject.xml en tu carpeta principal
-
-      - name: Compilar APK
-        run: |
-          # Localizamos el motor de Android en el servidor
+          # Buscamos la ruta del SDK de Android que ya viene en el servidor de GitHub
           $androidJar = Get-ChildItem -Path "C:\Microsoft\AndroidSDK\25\platforms" -Filter "android.jar" -Recurse | Select-Object -First 1 -ExpandProperty FullName
+          Write-Host "Usando SDK en: $androidJar"
           
-          # Compilación final
-          # -AdditionalLibraries=. le dice que use los archivos que subiste y los que descargamos
-          .\B4ABuilder\B4ABuilder.exe -Task=Build -Project=Proyecto.b4p -Args="-v -SystemJar=$androidJar -AdditionalLibraries=."
+          # Ejecutamos el compilador que subiste
+          # -AdditionalLibraries=. le dice que las librerías están en la raíz junto al .exe
+          .\B4ABuilder.exe -Task=Build -Project=Proyecto.b4p -Args="-v -SystemJar=$androidJar -AdditionalLibraries=."
 
-      - name: Subir APK
+      - name: 4. Entregar APK para descargar
         uses: actions/upload-artifact@v4
         with:
           name: MiApp_Instalable
