@@ -20,14 +20,15 @@ jobs:
 
       - name: 3. Compilar APK
         run: |
-          # Obtenemos la ruta y la forzamos a un formato que el Builder entienda
+          # Encontramos la ruta del SDK
           $sdkPath = "$env:ANDROID_SDK_ROOT\platforms"
           $androidJar = Get-ChildItem -Path $sdkPath -Filter "android.jar" -Recurse | Select-Object -First 1 -ExpandProperty FullName
           
-          Write-Host "Iniciando compilación con SDK: $androidJar"
+          Write-Host "Iniciando compilación directa con SDK: $androidJar"
 
-          # Ejecución con comillas reforzadas para evitar el error de "Parsing"
-          .\B4ABuilder.exe -Task=Build "-Project=Proyecto.b4p" "-Args=-v -SystemJar=$androidJar -AdditionalLibraries=."
+          # Ejecución directa sin la etiqueta -Args
+          # Pasamos cada parámetro por separado para evitar errores de "Parsing"
+          .\B4ABuilder.exe -Task=Build -Project=Proyecto.b4p -SystemJar="$androidJar" -AdditionalLibraries="." -v
 
       - name: 4. Entregar APK para descargar
         uses: actions/upload-artifact@v4
