@@ -12,25 +12,12 @@ jobs:
       - name: Checkout del código
         uses: actions/checkout@v4
 
-      - name: Instalar Java 8
-        uses: actions/setup-java@v4
+      - name: Configurar B4A y Compilar
+        # Usamos una acción mantenida que ya conoce las rutas de Android en GitHub
+        uses: sstsoft/b4a-action@v1.1
         with:
-          java-version: '8'
-          distribution: 'temurin'
-
-      - name: Descargar B4A Builder
-        run: |
-          Invoke-WebRequest -Uri "https://www.b4x.com/android/files/B4ABuilder.zip" -OutFile "B4ABuilder.zip"
-          Expand-Archive -Path "B4ABuilder.zip" -DestinationPath "B4ABuilder"
-
-      - name: Compilar APK
-        run: |
-          # Buscamos el android.jar en el servidor de GitHub automáticamente
-          $androidJar = Get-ChildItem -Path "C:\Microsoft\AndroidSDK\25\platforms" -Filter "android.jar" -Recurse | Select-Object -First 1 -ExpandProperty FullName
+          project_file: 'Proyecto.b4p' # Asegúrate de que este nombre sea exacto al de tu archivo
           
-          # Ejecutamos el compilador pasando la ruta del SDK
-          .\B4ABuilder\B4ABuilder.exe -Task=Build -Project=Proyecto.b4p -Args="-v -SystemJar=$androidJar"
-
       - name: Subir APK
         uses: actions/upload-artifact@v4
         with:
