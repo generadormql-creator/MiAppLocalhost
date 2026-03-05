@@ -17,7 +17,8 @@ jobs:
       - name: Crear y Configurar App
         run: |
           npm install -g cordova
-          cordova create app com.synapse.ai "Synapse AI V3"
+          # Creamos la app con el ID correcto
+          cordova create app com.synapse.ai "Synapse_AI_V3"
           cd app
           cordova platform add android
           
@@ -27,7 +28,7 @@ jobs:
           rm -rf www/*
           cp -rv ../www/* www/
           
-          # Sobreescribimos el config.xml de la app con el tuyo
+          # Sobreescribimos el config.xml
           cp -f ../config.xml config.xml
           
           cordova build android --no-telemetry
@@ -36,4 +37,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Synapse_AI_V3_APK
-          path: app/platforms/android/app/build/outputs/apk/debug/*.apk
+          # Esta ruta es mucho más flexible para encontrar el archivo
+          path: app/platforms/android/app/build/outputs/apk/**/*.apk
