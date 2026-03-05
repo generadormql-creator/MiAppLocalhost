@@ -18,26 +18,25 @@ jobs:
           java-version: '8'
           distribution: 'temurin'
 
-      - name: Descargar B4A Builder y Librerias
+      - name: Descargar B4A Builder y Librerias Faltantes
         run: |
-          # Descargamos el compilador oficial de la línea de comandos
+          # Descargamos el compilador
           Invoke-WebRequest -Uri "https://www.b4x.com/android/files/b4abuilder.zip" -OutFile "B4ABuilder.zip"
           Expand-Archive -Path "B4ABuilder.zip" -DestinationPath "B4ABuilder"
           
-          # Creamos la carpeta de librerías adicionales
-          New-Item -ItemType Directory -Path "AdditionalLibs"
-          
-          # NOTA: Aquí GitHub descargará las librerías necesarias si no las subiste
-          # Si tienes los archivos .jar y .xml de HttpServer, asegúrate de que estén en tu repositorio
+          # DESCARGAR JAVAOBJECT (Ya que no la tienes)
+          Invoke-WebRequest -Uri "https://www.b4x.com/android/files/JavaObject.zip" -OutFile "JavaObject.zip"
+          Expand-Archive -Path "JavaObject.zip" -DestinationPath "."
+          # Esto dejará JavaObject.jar y JavaObject.xml en tu carpeta principal
 
       - name: Compilar APK
         run: |
-          # Buscamos el android.jar en el sistema de GitHub
+          # Localizamos el motor de Android en el servidor
           $androidJar = Get-ChildItem -Path "C:\Microsoft\AndroidSDK\25\platforms" -Filter "android.jar" -Recurse | Select-Object -First 1 -ExpandProperty FullName
           
-          # Ejecutamos la compilación
-          # Ajustamos el nombre del proyecto a Proyecto.b4p (asegúrate de que coincida con tu archivo)
-          .\B4ABuilder\B4ABuilder.exe -Task=Build -Project=Proyecto.b4p -Args="-v -SystemJar=$androidJar -AdditionalLibraries=AdditionalLibs"
+          # Compilación final
+          # -AdditionalLibraries=. le dice que use los archivos que subiste y los que descargamos
+          .\B4ABuilder\B4ABuilder.exe -Task=Build -Project=Proyecto.b4p -Args="-v -SystemJar=$androidJar -AdditionalLibraries=."
 
       - name: Subir APK
         uses: actions/upload-artifact@v4
