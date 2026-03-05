@@ -1,32 +1,36 @@
-name: Generar APK con Cordova
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+name: Compilacion_Automatica
+on: [push, workflow_dispatch]
 
 jobs:
-  build:
+  construir_apk:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - name: Paso 1 - Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Paso 2 - Instalar Java
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-      - uses: actions/setup-node@v4
+
+      - name: Paso 3 - Instalar Node y Cordova
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Compilar
+
+      - name: Paso 4 - Crear y Compilar
         run: |
           npm install -g cordova
-          cordova create myApp com.localhost.myapp "MiApp"
-          cd myApp
+          cordova create app com.test.app "MiApp"
+          cd app
           cordova platform add android
           rm -rf www/*
-          cp -r ../www/* www/
+          cp -rv ../www/* www/
           cordova build android --no-telemetry
-      - name: Subir
+
+      - name: Paso 5 - Guardar APK
         uses: actions/upload-artifact@v4
         with:
-          name: MiApp_APK
-          path: myApp/platforms/android/app/build/outputs/apk/debug/*.apk
+          name: Archivo_APK
+          path: app/platforms/android/app/build/outputs/apk/debug/*.apk
