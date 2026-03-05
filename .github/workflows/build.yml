@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 1. Descargar archivos del repositorio
+      - name: 1. Descargar archivos
         uses: actions/checkout@v4
 
       - name: 2. Configurar Java 8
@@ -18,20 +18,18 @@ jobs:
           java-version: '8'
           distribution: 'temurin'
 
-      - name: 3. Compilar APK
+      - name: 3. Ejecutar Compilador (.bat)
         run: |
-          # Detectamos la ruta del SDK
+          # Encontramos la ruta del SDK de Android
           $sdkPath = "$env:ANDROID_SDK_ROOT\platforms"
           $androidJar = Get-ChildItem -Path $sdkPath -Filter "android.jar" -Recurse | Select-Object -First 1 -ExpandProperty FullName
           
-          Write-Host "Compilando proyecto: Proyecto.b4p"
-          Write-Host "Usando SDK: $androidJar"
+          Write-Host "Iniciando proceso por lote con SDK: $androidJar"
+          
+          # Llamamos al archivo .bat pasando la ruta del SDK entre comillas dobles
+          cmd.exe /c "compilar.bat `"$androidJar`""
 
-          # FORMATO SIMPLIFICADO: 
-          # Quitamos el -v y el -Task para ver si el Builder arranca con lo mínimo
-          .\B4ABuilder.exe -Project=Proyecto.b4p -SystemJar="$androidJar" -AdditionalLibraries="."
-
-      - name: 4. Entregar APK para descargar
+      - name: 4. Subir APK
         uses: actions/upload-artifact@v4
         with:
           name: MiApp_Instalable
