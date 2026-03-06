@@ -1,4 +1,4 @@
-name: Compilacion_Synapse_AI
+name: Compilacion_Synapse_V3_Release
 on: [push, workflow_dispatch]
 
 jobs:
@@ -14,27 +14,35 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Crear y Configurar App
+      - name: Preparar Entorno y Cordova
         run: |
           npm install -g cordova
-          # Usamos un nombre de carpeta simple para evitar errores de Linux
+          # Creamos la carpeta del proyecto
           cordova create app com.synapse.ai "Synapse_AI_V3"
           cd app
           cordova platform add android
+          
+          # Plugin necesario para detectar internet
           cordova plugin add cordova-plugin-network-information
+          
+          # Limpiamos y copiamos tu HTML/JS/CSS e Icono
           rm -rf www/*
           cp -rv ../www/* www/
+          
+          # Copiamos tu config.xml personalizado
           cp -f ../config.xml config.xml
-          # Forzamos la compilación
-          cordova build android --no-telemetry --debug
+          
+          # COMPILACIÓN FIRMADA (RELEASE)
+          # Usamos los datos de tu llave: keysynapse.jks / Oliver12 / synapsev3
+          cordova build android --release --no-telemetry -- --keystore=../keysynapse.jks --storePassword=Oliver12 --alias=synapsev3 --password=Oliver12
 
-      - name: Listar archivos (Para Debug)
+      - name: Listar archivos para verificar ruta
         run: find . -name "*.apk"
 
-      - name: Guardar APK
+      - name: Guardar APK Final Firmada
         uses: actions/upload-artifact@v4
         with:
-          name: Synapse_AI_V3_APK
-          # Buscamos en todo el directorio del runner
+          name: Synapse_AI_V3_PRO_Firmada
+          # Esta ruta buscará cualquier APK generado, asegurando que no falle por la ruta
           path: "**/*.apk"
           if-no-files-found: error
