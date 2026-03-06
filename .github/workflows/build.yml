@@ -17,7 +17,6 @@ jobs:
       - name: Preparar Entorno y Cordova
         run: |
           npm install -g cordova
-          # Usamos un nombre de carpeta sin espacios para el proceso interno
           cordova create app com.synapse.ai "Synapse_AI_V3"
           cd app
           cordova platform add android
@@ -26,9 +25,12 @@ jobs:
           cp -rv ../www/* www/
           cp -f ../config.xml config.xml
           
-          # COMPILACIÓN FIRMADA USANDO RUTA ABSOLUTA
-          # $GITHUB_WORKSPACE apunta a la raíz donde subiste el .jks
-          cordova build android --release --no-telemetry -- --keystore=$GITHUB_WORKSPACE/keysynapse.jks --storePassword=Oliver12 --alias=synapsev3 --password=Oliver12
+          # COPIAR LA LLAVE AL DIRECTORIO DE ANDROID PARA QUE NO HAYA PIERDE
+          cp ../keysynapse.jks .
+          
+          # COMPILACIÓN FIRMADA (RELEASE)
+          # Ahora la llave está en el mismo nivel que el proceso de compilación
+          cordova build android --release --no-telemetry -- --keystore=keysynapse.jks --storePassword=Oliver12 --alias=synapsev3 --password=Oliver12
 
       - name: Guardar APK Final Firmada
         uses: actions/upload-artifact@v4
