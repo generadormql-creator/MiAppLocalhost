@@ -1,4 +1,4 @@
-name: Compilacion_Synapse_V3_Release
+name: Compilacion_Synapse_V3_Final
 on: [push, workflow_dispatch]
 
 jobs:
@@ -14,30 +14,48 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Preparar y Compilar
+      - name: Compilacion con Paradas de Seguridad
         run: |
-          npm install -g cordova
-          # Creamos la carpeta
-          cordova create proyecto com.synapse.ai "Synapse_AI_V3"
-          cd proyecto
+          # 1. Detener el proceso si algo falla
+          set -e
           
-          # Añadimos plataforma y plugin
+          # 2. Instalar Cordova
+          npm install -g cordova
+          
+          # 3. Verificar que la llave existe en la raíz
+          if [ ! -f "keysynapse.jks" ]; then
+            echo "ERROR: El archivo keysynapse.jks no se encuentra en la raiz del repositorio."
+            exit 1
+          fi
+
+          # 4. Crear proyecto y configurar
+          cordova create tmp_app com.synapse.ai "Synapse_AI_V3"
+          cd tmp_app
           cordova platform add android
           cordova plugin add cordova-plugin-network-information
           
-          # Copiamos tus archivos (subiendo un nivel para encontrarlos)
+          # 5. Sincronizar archivos
           rm -rf www/*
           cp -rv ../www/* www/
           cp -f ../config.xml config.xml
-          cp ../keysynapse.jks .
           
-          # COMPILACIÓN DIRECTA (Aquí está el cambio clave)
-          cordova build android --release --no-telemetry -- --keystore=keysynapse.jks --storePassword=Oliver12 --alias=synapsev3 --password=Oliver12
+          # 6. Compilar con ruta absoluta para la Keystore
+          # Usamos --device para asegurar formato APK de distribucion
+          cordova build android --release --device --no-telemetry -- \
+            --keystore="../../keysynapse.jks" \
+            --storePassword="Oliver12" \
+            --alias="synapsev3" \
+            --password="Oliver12"
 
-      - name: Encontrar y Guardar APK
+      - name: Localizar y Mover APK
+        if: success()
+        run: |
+          # Buscamos el APK generado y lo movemos a la raiz para el upload
+          find . -name "*-release.apk" -exec cp {} ../synapse_v3_final.apk \;
+          echo "Archivo localizado y listo para subir."
+
+      - name: Subir Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Synapse_AI_V3_PRO_Firmada
-          # Buscamos en todo el servidor por si acaso
-          path: "**/proyecto/platforms/android/app/build/outputs/apk/release/*.apk"
-          if-no-files-found: error
+          name: Synapse_AI_V3_Firmada
+          path: synapse_v3_final.apk
