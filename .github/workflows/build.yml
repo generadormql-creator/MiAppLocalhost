@@ -14,49 +14,30 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Preparar Entorno y Cordova
+      - name: Preparar y Compilar
         run: |
           npm install -g cordova
-          cordova create app com.synapse.ai "Synapse_AI_V3"
-          cd app
+          # Creamos la carpeta
+          cordova create proyecto com.synapse.ai "Synapse_AI_V3"
+          cd proyecto
+          
+          # Añadimos plataforma y plugin
           cordova platform add android
           cordova plugin add cordova-plugin-network-information
+          
+          # Copiamos tus archivos (subiendo un nivel para encontrarlos)
           rm -rf www/*
           cp -rv ../www/* www/
           cp -f ../config.xml config.xml
-          
-          # COPIAR LA LLAVE AL LUGAR DE TRABAJO
           cp ../keysynapse.jks .
           
-          # COMPILACIÓN FIRMADA (FORZANDO APK)
-          # Usamos --buildConfig para evitar errores de parámetros
-          echo "android {
-              signingConfigs {
-                  release {
-                      storeFile file('../keysynapse.jks')
-                      storePassword 'Oliver12'
-                      keyAlias 'synapsev3'
-                      keyPassword 'Oliver12'
-                  }
-              }
-              buildTypes {
-                  release {
-                      signingConfig signingConfigs.release
-                  }
-              }
-          }" > platforms/android/release-signing.properties
+          # COMPILACIÓN DIRECTA (Aquí está el cambio clave)
+          cordova build android --release --no-telemetry -- --keystore=keysynapse.jks --storePassword=Oliver12 --alias=synapsev3 --password=Oliver12
 
-          # Ejecutamos el build de forma simple
-          cordova build android --release --no-telemetry -- --keystore=../keysynapse.jks --storePassword=Oliver12 --alias=synapsev3 --password=Oliver12
-
-      - name: Mover APK a la raíz (Para no perderla)
-        run: |
-          find . -name "*.apk" -exec cp {} ./synapse_final.apk \;
-          ls -R # Esto nos mostrará en el log qué carpetas se crearon
-
-      - name: Guardar APK Final Firmada
+      - name: Encontrar y Guardar APK
         uses: actions/upload-artifact@v4
         with:
           name: Synapse_AI_V3_PRO_Firmada
-          path: synapse_final.apk
+          # Buscamos en todo el servidor por si acaso
+          path: "**/proyecto/platforms/android/app/build/outputs/apk/release/*.apk"
           if-no-files-found: error
