@@ -10,8 +10,12 @@
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
 
+    <preference name="Fullscreen" value="false" />
+    <preference name="Orientation" value="portrait" />
     <preference name="BackgroundColor" value="0xff000000" />
-    <preference name="SplashScreenDelay" value="5000" /> <preference name="FadeSplashScreenDuration" value="300" />
+    
+    <preference name="SplashScreenDelay" value="3000" /> 
+    <preference name="FadeSplashScreenDuration" value="300" />
     <preference name="SplashMaintainAspectRatio" value="true" />
 
     <icon src="www/icon.png" />
