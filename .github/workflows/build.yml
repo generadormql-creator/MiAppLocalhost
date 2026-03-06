@@ -25,16 +25,38 @@ jobs:
           cp -rv ../www/* www/
           cp -f ../config.xml config.xml
           
-          # COPIAR LA LLAVE AL DIRECTORIO DE ANDROID PARA QUE NO HAYA PIERDE
+          # COPIAR LA LLAVE AL LUGAR DE TRABAJO
           cp ../keysynapse.jks .
           
-          # COMPILACIÓN FIRMADA (RELEASE)
-          # Ahora la llave está en el mismo nivel que el proceso de compilación
-          cordova build android --release --no-telemetry -- --keystore=keysynapse.jks --storePassword=Oliver12 --alias=synapsev3 --password=Oliver12
+          # COMPILACIÓN FIRMADA (FORZANDO APK)
+          # Usamos --buildConfig para evitar errores de parámetros
+          echo "android {
+              signingConfigs {
+                  release {
+                      storeFile file('../keysynapse.jks')
+                      storePassword 'Oliver12'
+                      keyAlias 'synapsev3'
+                      keyPassword 'Oliver12'
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                  }
+              }
+          }" > platforms/android/release-signing.properties
+
+          # Ejecutamos el build de forma simple
+          cordova build android --release --no-telemetry -- --keystore=../keysynapse.jks --storePassword=Oliver12 --alias=synapsev3 --password=Oliver12
+
+      - name: Mover APK a la raíz (Para no perderla)
+        run: |
+          find . -name "*.apk" -exec cp {} ./synapse_final.apk \;
+          ls -R # Esto nos mostrará en el log qué carpetas se crearon
 
       - name: Guardar APK Final Firmada
         uses: actions/upload-artifact@v4
         with:
           name: Synapse_AI_V3_PRO_Firmada
-          path: "**/*.apk"
+          path: synapse_final.apk
           if-no-files-found: error
