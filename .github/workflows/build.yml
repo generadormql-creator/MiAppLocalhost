@@ -1,16 +1,15 @@
-name: Firmar_APK_Debug
+name: Firmar_APK
 
 on:
   push:
   workflow_dispatch:
 
 jobs:
-  sign_apk:
+  sign:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Clonar repositorio
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Instalar Java
         uses: actions/setup-java@v4
@@ -18,23 +17,28 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Ver archivos
-        run: ls -la
-
-      - name: Firmar APK
+      - name: Instalar Android Build Tools
         run: |
-          jarsigner \
-          -keystore keysynapse.jks \
-          -storepass Oliver12 \
-          -keypass Oliver12 \
-          app-debug.apk \
-          synapsev3
+          sudo apt-get update
+          sudo apt-get install -y apksigner zipalign
 
-      - name: Copiar APK firmado
-        run: cp app-debug.apk SynapseAI_signed.apk
+      - name: Alinear APK
+        run: |
+          zipalign -v 4 app-debug.apk aligned.apk
+
+      - name: Firmar APK correctamente
+        run: |
+          apksigner sign \
+          --ks keysynapse.jks \
+          --ks-key-alias synapsev3 \
+          --ks-pass pass:Oliver12 \
+          --key-pass pass:Oliver12 \
+          --out SynapseAI_signed.apk \
+          aligned.apk
 
       - name: Verificar firma
-        run: jarsigner -verify -verbose -certs SynapseAI_signed.apk
+        run: |
+          apksigner verify SynapseAI_signed.apk
 
       - name: Subir APK firmado
         uses: actions/upload-artifact@v4
