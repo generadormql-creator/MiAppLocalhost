@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Clonar repositorio
+      - name: Clonar repo
         uses: actions/checkout@v4
 
       - name: Instalar Java
@@ -26,41 +26,44 @@ jobs:
       - name: Instalar Cordova
         run: npm install -g cordova
 
-      - name: Crear proyecto Cordova
+      - name: Crear proyecto
         run: |
-          cordova create app com.synapse.ai "Synapse_AI_V3"
+          cordova create app com.synapse.ai SynapseAI
           cd app
           cordova platform add android
           cordova plugin add cordova-plugin-network-information
 
-      - name: Copiar archivos de tu app
+      - name: Copiar tu app
         run: |
           rm -rf app/www/*
           cp -r www/* app/www/
           cp config.xml app/config.xml
 
-      - name: Compilar APK
+      - name: Compilar APK release
         run: |
           cd app
-          cordova build android --release
+          cordova build android --release --no-telemetry
 
-      - name: Firmar APK
+      - name: Buscar APK generado
         run: |
+          find . -name "*.apk"
+
+      - name: Firmar APK automáticamente
+        run: |
+          APK=$(find . -name "*release*.apk" | head -n 1)
+          echo "APK encontrado: $APK"
+
           jarsigner \
           -keystore keysynapse.jks \
           -storepass Oliver12 \
           -keypass Oliver12 \
-          app/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk \
+          "$APK" \
           synapsev3
 
-      - name: Optimizar APK
-        run: |
-          zipalign -v 4 \
-          app/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk \
-          SynapseAI_signed.apk
+          cp "$APK" SynapseAI_signed.apk
 
-      - name: Subir APK
+      - name: Subir APK firmado
         uses: actions/upload-artifact@v4
         with:
-          name: Synapse_AI_V3_APK_SIGNED
+          name: Synapse_AI_V3_SIGNED
           path: SynapseAI_signed.apk
