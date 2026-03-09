@@ -1,58 +1,45 @@
-name: Compilacion_Synapse_AI
+name: Firmar_APK_Debug
 
-on: [push, workflow_dispatch]
+on:
+  push:
+  workflow_dispatch:
 
 jobs:
-  construir_apk:
+  sign_apk:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - name: Instalar Java
+        uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          distribution: temurin
+          java-version: "17"
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Instalar Cordova
-        run: npm install -g cordova
-
-      - name: Crear y Configurar App
-        run: |
-          cordova create app com.synapse.ai SynapseAI
-          cd app
-          cordova platform add android
-          cordova plugin add cordova-plugin-network-information
-
-          rm -rf www/*
-          cp -r ../www/* www/
-          cp ../config.xml config.xml
-
-          cordova build android --debug
-
-      - name: Mostrar APK generado
-        run: find . -name "*.apk"
+      - name: Mostrar archivos
+        run: ls -la
 
       - name: Firmar APK
         run: |
-          APK=$(find . -name "*.apk" | head -n 1)
-          echo "APK encontrado: $APK"
-
           jarsigner \
           -keystore keysynapse.jks \
           -storepass Oliver12 \
           -keypass Oliver12 \
-          "$APK" \
+          app-debug.apk \
           synapsev3
 
-          cp "$APK" SynapseAI_signed.apk
+      - name: Alinear APK (zipalign)
+        run: |
+          zipalign -v 4 app-debug.apk SynapseAI_signed.apk
 
-      - name: Subir APK
+      - name: Verificar firma
+        run: |
+          jarsigner -verify -verbose -certs SynapseAI_signed.apk
+
+      - name: Subir APK firmado
         uses: actions/upload-artifact@v4
         with:
-          name: Synapse_AI_APK_SIGNED
+          name: SynapseAI_signed
           path: SynapseAI_signed.apk
