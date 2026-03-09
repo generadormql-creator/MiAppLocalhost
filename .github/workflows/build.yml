@@ -16,15 +16,17 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Instalar Cordova
-        run: npm install -g cordova
+      - name: Instalar Cordova y Android platform
+        run: |
+          npm install -g cordova
+          npm install -g cordova-android@11
 
       - name: Crear proyecto Cordova
         run: |
           cordova create app com.synapse.ai SynapseAI
           cd app
 
-          cordova platform add android@11
+          cordova platform add android
 
           rm -rf www
           cp -r ../www www
@@ -37,7 +39,6 @@ jobs:
 
       - name: Firmar APK
         run: |
-
           cd app/platforms/android/app/build/outputs/apk/release
 
           jarsigner \
