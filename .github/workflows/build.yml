@@ -18,7 +18,7 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Mostrar archivos
+      - name: Ver archivos
         run: ls -la
 
       - name: Firmar APK
@@ -30,13 +30,11 @@ jobs:
           app-debug.apk \
           synapsev3
 
-      - name: Alinear APK (zipalign)
-        run: |
-          zipalign -v 4 app-debug.apk SynapseAI_signed.apk
+      - name: Copiar APK firmado
+        run: cp app-debug.apk SynapseAI_signed.apk
 
       - name: Verificar firma
-        run: |
-          jarsigner -verify -verbose -certs SynapseAI_signed.apk
+        run: jarsigner -verify -verbose -certs SynapseAI_signed.apk
 
       - name: Subir APK firmado
         uses: actions/upload-artifact@v4
