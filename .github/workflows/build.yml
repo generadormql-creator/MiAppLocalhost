@@ -1,56 +1,45 @@
-name: Build_Synapse_AI_Signed
+name: Compilacion_Synapse_AI
 
-on:
-  push:
-  workflow_dispatch:
+on: [push, workflow_dispatch]
 
 jobs:
-  build:
+  construir_apk:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Clonar repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Instalar Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: "17"
+          java-version: '17'
+          distribution: 'temurin'
 
-      - name: Instalar Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: '20'
 
       - name: Instalar Cordova
         run: npm install -g cordova
 
-      - name: Crear proyecto
+      - name: Crear y Configurar App
         run: |
           cordova create app com.synapse.ai SynapseAI
           cd app
           cordova platform add android
           cordova plugin add cordova-plugin-network-information
 
-      - name: Copiar tu app
-        run: |
-          rm -rf app/www/*
-          cp -r www/* app/www/
-          cp config.xml app/config.xml
+          rm -rf www/*
+          cp -r ../www/* www/
+          cp ../config.xml config.xml
 
-      - name: Compilar APK release
-        run: |
-          cd app
-          cordova build android --release --no-telemetry
+          cordova build android --debug
 
-      - name: Buscar APK generado
-        run: |
-          find . -name "*.apk"
+      - name: Mostrar APK generado
+        run: find . -name "*.apk"
 
-      - name: Firmar APK automáticamente
+      - name: Firmar APK
         run: |
-          APK=$(find . -name "*release*.apk" | head -n 1)
+          APK=$(find . -name "*.apk" | head -n 1)
           echo "APK encontrado: $APK"
 
           jarsigner \
@@ -62,8 +51,8 @@ jobs:
 
           cp "$APK" SynapseAI_signed.apk
 
-      - name: Subir APK firmado
+      - name: Subir APK
         uses: actions/upload-artifact@v4
         with:
-          name: Synapse_AI_V3_SIGNED
+          name: Synapse_AI_APK_SIGNED
           path: SynapseAI_signed.apk
