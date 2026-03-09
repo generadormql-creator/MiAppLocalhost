@@ -1,50 +1,65 @@
 name: Compilacion_Synapse_V3_Final
-on: [push, workflow_dispatch]
+
+on:
+  push:
+  workflow_dispatch:
 
 jobs:
   construir_apk:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Java
+        uses: actions/setup-java@v4
         with:
-          java-version: '17'
           distribution: 'temurin'
-      - uses: actions/setup-node@v4
+          java-version: '17'
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Compilacion Profesional
+      - name: Instalar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Compilar Aplicacion
         run: |
           set -e
+
+          echo "Instalando Cordova..."
           npm install -g cordova
-          
-          # 1. Crear proyecto en una carpeta limpia
+
+          echo "Creando proyecto Cordova..."
           cordova create proyecto com.synapse.ai "Synapse_AI_V3"
+
           cd proyecto
-          
-          # 2. Configurar plataforma y plugins
+
+          echo "Agregando plataforma Android..."
           cordova platform add android
+
+          echo "Instalando plugins necesarios..."
           cordova plugin add cordova-plugin-network-information
-          
-          # 3. Limpiar y copiar tus archivos de la carpeta www del repo
+          cordova plugin add cordova-plugin-whitelist
+
+          echo "Copiando archivos de la app..."
           rm -rf www/*
           cp -rv ${{ github.workspace }}/www/* www/
           cp -f ${{ github.workspace }}/config.xml config.xml
-          
-          # 4. Compilar usando la ruta ABSOLUTA de la llave
-          # ${{ github.workspace }} es la raiz donde esta tu keysynapse.jks
-          cordova build android --release --device --no-telemetry -- \
+
+          echo "Compilando APK firmada..."
+          cordova build android --release --device -- \
             --keystore="${{ github.workspace }}/keysynapse.jks" \
             --storePassword="Oliver12" \
             --alias="synapsev3" \
             --password="Oliver12"
 
-      - name: Localizar y Subir APK
+      - name: Subir APK generada
         uses: actions/upload-artifact@v4
         with:
-          name: Synapse_AI_V3_Firmada
-          # Buscamos cualquier APK que se haya generado en el proceso
-          path: "**/*.apk"
+          name: Synapse_AI_V3_APK_FIRMADA
+          path: proyecto/platforms/android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
-        
