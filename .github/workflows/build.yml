@@ -1,61 +1,87 @@
-name: Build Android APK
+   - name: Crear y Configurar App
 
-on:
-  workflow_dispatch:
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - name: Instalar Cordova
-        run: npm install -g cordova
-
-      - name: Crear proyecto Cordova
         run: |
-          cordova create app com.synapse.ai SynapseAI
+
+          npm install -g cordova
+
+
+          # Creamos la app con el ID correcto
+
+
+          # Usamos un nombre de carpeta simple para evitar errores de Linux
+
+          cordova create app com.synapse.ai "Synapse_AI_V3"
+
           cd app
 
-          rm -rf www
-          cp -r ../www www
-          cp ../config.xml config.xml
+          cordova platform add android
 
-      - name: Agregar plataforma Android
-        run: |
-          cd app
-          cordova platform add android@12
 
-      - name: Build APK
-        run: |
-          cd app
-          cordova build android --release
+          
 
-      - name: Firmar APK
-        run: |
-          cd app/platforms/android/app/build/outputs/apk/release
 
-          jarsigner \
-          -verbose \
-          -sigalg SHA256withRSA \
-          -digestalg SHA-256 \
-          -keystore ../../../../../../../keysynapse.jks \
-          -storepass Oliver12 \
-          -keypass Oliver12 \
-          app-release-unsigned.apk synapsev3
+          # Plugin para detectar Red/Internet
 
-          mv app-release-unsigned.apk SynapseAI.apk
+          cordova plugin add cordova-plugin-network-information
 
-      - name: Upload APK
+
+          
+
+          rm -rf www/*
+
+          cp -rv ../www/* www/
+
+
+          
+
+
+          # Sobreescribimos el config.xml
+
+          cp -f ../config.xml config.xml
+
+
+          
+
+
+          cordova build android --no-telemetry
+
+
+          # Forzamos la compilación
+
+
+          cordova build android --no-telemetry --debug
+
+
+
+
+
+      - name: Listar archivos (Para Debug)
+
+
+        run: find . -name "*.apk"
+
+
+
+      - name: Guardar APK
+
         uses: actions/upload-artifact@v4
+
         with:
-          name: SynapseAI_APK
-          path: app/platforms/android/app/build/outputs/apk/release/SynapseAI.apk
+
+          name: Synapse_AI_V3_APK
+
+
+          # Esta ruta es mucho más flexible para encontrar el archivo
+
+
+          path: app/platforms/android/app/build/outputs/apk/**/*.apk
+
+
+          # Buscamos en todo el directorio del runner
+
+
+          path: "**/*.apk"
+
+
+          if-no-files-found: error
