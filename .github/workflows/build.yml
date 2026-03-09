@@ -1,87 +1,40 @@
-   - name: Crear y Configurar App
+name: Compilacion_Synapse_AI
+on: [push, workflow_dispatch]
 
+jobs:
+  construir_apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
+      - name: Crear y Configurar App
         run: |
-
           npm install -g cordova
-
-
-          # Creamos la app con el ID correcto
-
-
           # Usamos un nombre de carpeta simple para evitar errores de Linux
-
           cordova create app com.synapse.ai "Synapse_AI_V3"
-
           cd app
-
           cordova platform add android
-
-
-          
-
-
-          # Plugin para detectar Red/Internet
-
           cordova plugin add cordova-plugin-network-information
-
-
-          
-
           rm -rf www/*
-
           cp -rv ../www/* www/
-
-
-          
-
-
-          # Sobreescribimos el config.xml
-
           cp -f ../config.xml config.xml
-
-
-          
-
-
-          cordova build android --no-telemetry
-
-
           # Forzamos la compilación
-
-
           cordova build android --no-telemetry --debug
 
-
-
-
-
       - name: Listar archivos (Para Debug)
-
-
         run: find . -name "*.apk"
 
-
-
       - name: Guardar APK
-
         uses: actions/upload-artifact@v4
-
         with:
-
           name: Synapse_AI_V3_APK
-
-
-          # Esta ruta es mucho más flexible para encontrar el archivo
-
-
-          path: app/platforms/android/app/build/outputs/apk/**/*.apk
-
-
           # Buscamos en todo el directorio del runner
-
-
           path: "**/*.apk"
-
-
           if-no-files-found: error
