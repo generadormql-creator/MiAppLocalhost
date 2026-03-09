@@ -1,58 +1,66 @@
-name: Compilacion_Synapse_AI
+name: Build_Synapse_AI_Signed
 
-on: [push, workflow_dispatch]
+on:
+  push:
+  workflow_dispatch:
 
 jobs:
-  construir_apk:
-
+  build:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
 
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-java@v4
+      - name: Instalar Java
+        uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          distribution: temurin
+          java-version: "17"
 
-      - uses: actions/setup-node@v4
+      - name: Instalar Node
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
-      - name: Crear y Configurar App
+      - name: Instalar Cordova
+        run: npm install -g cordova
+
+      - name: Crear proyecto Cordova
         run: |
-          npm install -g cordova
-
           cordova create app com.synapse.ai "Synapse_AI_V3"
           cd app
-
           cordova platform add android
           cordova plugin add cordova-plugin-network-information
 
-          rm -rf www/*
-          cp -rv ../www/* www/
-          cp -f ../config.xml config.xml
-
-          cordova build android --no-telemetry --debug
-
-      - name: Firmar APK con tu keystore
+      - name: Copiar archivos de tu app
         run: |
-          cd app/platforms/android/app/build/outputs/apk/debug
+          rm -rf app/www/*
+          cp -r www/* app/www/
+          cp config.xml app/config.xml
 
+      - name: Compilar APK
+        run: |
+          cd app
+          cordova build android --release
+
+      - name: Firmar APK
+        run: |
           jarsigner \
-          -verbose \
-          -sigalg SHA256withRSA \
-          -digestalg SHA-256 \
-          -keystore ../../../../../../../keysynapse.jks \
+          -keystore keysynapse.jks \
           -storepass Oliver12 \
           -keypass Oliver12 \
-          app-debug.apk synapsev3
+          app/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk \
+          synapsev3
 
-          mv app-debug.apk Synapse_AI_V3_signed.apk
+      - name: Optimizar APK
+        run: |
+          zipalign -v 4 \
+          app/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk \
+          SynapseAI_signed.apk
 
-      - name: Guardar APK
+      - name: Subir APK
         uses: actions/upload-artifact@v4
         with:
-          name: Synapse_AI_V3_APK
-          path: app/platforms/android/app/build/outputs/apk/debug/Synapse_AI_V3_signed.apk
+          name: Synapse_AI_V3_APK_SIGNED
+          path: SynapseAI_signed.apk
