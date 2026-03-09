@@ -5,34 +5,36 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
-    container:
-      image: mingc/android-build-box:latest
 
     steps:
 
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Instalar Cordova y Android platform
-        run: |
-          npm install -g cordova
-          npm install -g cordova-android@11
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Instalar Cordova
+        run: npm install -g cordova
 
       - name: Crear proyecto Cordova
         run: |
           cordova create app com.synapse.ai SynapseAI
           cd app
 
-          cordova platform add android
-
           rm -rf www
           cp -r ../www www
           cp ../config.xml config.xml
 
-      - name: Compilar APK release
+      - name: Agregar plataforma Android
+        run: |
+          cd app
+          cordova platform add android@12
+
+      - name: Build APK
         run: |
           cd app
           cordova build android --release
@@ -52,7 +54,7 @@ jobs:
 
           mv app-release-unsigned.apk SynapseAI.apk
 
-      - name: Subir APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: SynapseAI_APK
