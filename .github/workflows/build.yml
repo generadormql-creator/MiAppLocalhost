@@ -1,82 +1,58 @@
-name: Build APK Firmada
+name: Build Android APK
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
+
     runs-on: ubuntu-latest
+
+    container:
+      image: mingc/android-build-box:latest
 
     steps:
 
-    - name: Checkout repo
-      uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    - name: Setup Node
-      uses: actions/setup-node@v4
-      with:
-        node-version: 18
+      - name: Instalar Cordova
+        run: npm install -g cordova
 
-    - name: Instalar Cordova
-      run: npm install -g cordova
+      - name: Crear proyecto Cordova
+        run: |
+          cordova create app com.synapse.ai SynapseAI
+          cd app
 
-    - name: Setup Java 17
-      uses: actions/setup-java@v4
-      with:
-        distribution: temurin
-        java-version: 17
+          cordova platform add android@11
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
+          rm -rf www
+          cp -r ../www www
+          cp ../config.xml config.xml
 
-    - name: Instalar SDK packages
-      run: |
-        yes | sdkmanager --licenses
-        sdkmanager "platform-tools"
-        sdkmanager "platforms;android-33"
-        sdkmanager "build-tools;33.0.2"
+      - name: Compilar APK release
+        run: |
+          cd app
+          cordova build android --release
 
-    - name: Preparar proyecto Cordova
-      run: |
-        cd proyecto
+      - name: Firmar APK
+        run: |
 
-        cordova platform remove android || true
-        cordova platform add android@11
+          cd app/platforms/android/app/build/outputs/apk/release
 
-    - name: Forzar Gradle compatible
-      run: |
-        cd proyecto/platforms/android
-        sed -i 's/gradle-.*-all.zip/gradle-7.6-all.zip/g' gradle/wrapper/gradle-wrapper.properties
+          jarsigner \
+          -verbose \
+          -sigalg SHA256withRSA \
+          -digestalg SHA-256 \
+          -keystore ../../../../../../../keysynapse.jks \
+          -storepass Oliver12 \
+          -keypass Oliver12 \
+          app-release-unsigned.apk synapsev3
 
-    - name: Compilar APK Release
-      run: |
-        cd proyecto
-        cordova build android --release
+          mv app-release-unsigned.apk SynapseAI.apk
 
-    - name: Firmar APK
-      run: |
-        cd proyecto/platforms/android/app/build/outputs/apk/release
-
-        keytool -genkey -v \
-          -keystore release-key.keystore \
-          -alias synapse \
-          -keyalg RSA \
-          -keysize 2048 \
-          -validity 10000 \
-          -storepass 123456 \
-          -keypass 123456 \
-          -dname "CN=Synapse, OU=Dev, O=AI, L=World, S=World, C=US"
-
-        jarsigner \
-          -keystore release-key.keystore \
-          -storepass 123456 \
-          -keypass 123456 \
-          app-release-unsigned.apk synapse
-
-        mv app-release-unsigned.apk Synapse_AI_V3.apk
-
-    - name: Subir APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: Synapse_AI_V3_Firmada
-        path: proyecto/platforms/android/app/build/outputs/apk/release/Synapse_AI_V3.apk
+      - name: Subir APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SynapseAI_APK
+          path: app/platforms/android/app/build/outputs/apk/release/SynapseAI.apk
