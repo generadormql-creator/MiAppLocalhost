@@ -1,15 +1,21 @@
 name: Compilacion_Synapse_AI
+
 on: [push, workflow_dispatch]
 
 jobs:
   construir_apk:
+
     runs-on: ubuntu-latest
+
     steps:
+
       - uses: actions/checkout@v4
+
       - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -17,24 +23,36 @@ jobs:
       - name: Crear y Configurar App
         run: |
           npm install -g cordova
-          # Usamos un nombre de carpeta simple para evitar errores de Linux
+
           cordova create app com.synapse.ai "Synapse_AI_V3"
           cd app
+
           cordova platform add android
           cordova plugin add cordova-plugin-network-information
+
           rm -rf www/*
           cp -rv ../www/* www/
           cp -f ../config.xml config.xml
-          # Forzamos la compilación
+
           cordova build android --no-telemetry --debug
 
-      - name: Listar archivos (Para Debug)
-        run: find . -name "*.apk"
+      - name: Firmar APK con tu keystore
+        run: |
+          cd app/platforms/android/app/build/outputs/apk/debug
+
+          jarsigner \
+          -verbose \
+          -sigalg SHA256withRSA \
+          -digestalg SHA-256 \
+          -keystore ../../../../../../../keysynapse.jks \
+          -storepass Oliver12 \
+          -keypass Oliver12 \
+          app-debug.apk synapsev3
+
+          mv app-debug.apk Synapse_AI_V3_signed.apk
 
       - name: Guardar APK
         uses: actions/upload-artifact@v4
         with:
           name: Synapse_AI_V3_APK
-          # Buscamos en todo el directorio del runner
-          path: "**/*.apk"
-          if-no-files-found: error
+          path: app/platforms/android/app/build/outputs/apk/debug/Synapse_AI_V3_signed.apk
