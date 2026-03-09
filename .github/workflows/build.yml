@@ -1,68 +1,82 @@
-name: Build_Synapse_AI_V3
+name: Build APK Firmada
 
 on:
-  push:
   workflow_dispatch:
 
 jobs:
   build:
+
     runs-on: ubuntu-latest
 
     steps:
 
-    - name: Checkout repositorio
+    - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Instalar Java
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+
+    - name: Instalar Cordova
+      run: |
+        npm install -g cordova
+
+    - name: Setup Java 11 (COMPATIBLE CON CORDOVA)
       uses: actions/setup-java@v4
       with:
         distribution: temurin
-        java-version: 17
-
-    - name: Instalar Node
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
+        java-version: 11
 
     - name: Instalar Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Instalar Cordova
-      run: npm install -g cordova
-
-    - name: Crear proyecto Cordova
+    - name: Instalar dependencias Android
       run: |
-        cordova create proyecto com.synapse.ai Synapse_AI_V3
-        cd proyecto
+        sdkmanager "platform-tools"
+        sdkmanager "platforms;android-33"
+        sdkmanager "build-tools;33.0.2"
 
-        cordova platform add android@12
-
-        cordova plugin add cordova-plugin-network-information
-
-    - name: Copiar archivos de la app
-      run: |
-        rm -rf proyecto/www/*
-        cp -r www/* proyecto/www/
-        cp config.xml proyecto/config.xml
-
-    - name: Compilar APK firmada
+    - name: Preparar proyecto Cordova
       run: |
         cd proyecto
 
-        cordova build android --release --device -- \
-        --keystore="${{ github.workspace }}/keysynapse.jks" \
-        --storePassword="Oliver12" \
-        --alias="synapsev3" \
-        --password="Oliver12"
+        # borrar android viejo para evitar conflictos
+        cordova platform remove android || true
 
-    - name: Buscar APK generada
+        # instalar version estable
+        cordova platform add android@11
+
+    - name: Build APK Release
       run: |
-        echo "APK generadas:"
-        find proyecto -name "*.apk"
+        cd proyecto
+        cordova build android --release
+
+    - name: Firmar APK
+      run: |
+
+        cd proyecto/platforms/android/app/build/outputs/apk/release
+
+        keytool -genkey -v \
+          -keystore release-key.keystore \
+          -alias synapse \
+          -keyalg RSA \
+          -keysize 2048 \
+          -validity 10000 \
+          -storepass 123456 \
+          -keypass 123456 \
+          -dname "CN=Synapse, OU=Dev, O=AI, L=World, S=World, C=US"
+
+        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+          -keystore release-key.keystore \
+          -storepass 123456 \
+          -keypass 123456 \
+          app-release-unsigned.apk synapse
+
+        mv app-release-unsigned.apk Synapse_AI_V3.apk
 
     - name: Subir APK
       uses: actions/upload-artifact@v4
       with:
-        name: Synapse_AI_V3_APK_FIRMADA
-        path: proyecto/platforms/android/app/build/outputs/apk/release/app-release.apk
-        if-no-files-found: error
+        name: Synapse_AI_V3_Firmada
+        path: proyecto/platforms/android/app/build/outputs/apk/release/Synapse_AI_V3.apk
