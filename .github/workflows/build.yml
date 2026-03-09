@@ -1,65 +1,68 @@
-name: Compilacion_Synapse_V3_Final
+name: Build_Synapse_AI_V3_APK
 
 on:
   push:
   workflow_dispatch:
 
 jobs:
-  construir_apk:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Descargar repositorio
-        uses: actions/checkout@v4
 
-      - name: Instalar Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+    - name: Checkout repositorio
+      uses: actions/checkout@v4
 
-      - name: Instalar Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+    - name: Instalar Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 17
 
-      - name: Instalar Android SDK
-        uses: android-actions/setup-android@v3
+    - name: Instalar Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
 
-      - name: Compilar Aplicacion
-        run: |
-          set -e
+    - name: Instalar Android SDK
+      uses: android-actions/setup-android@v3
 
-          echo "Instalando Cordova..."
-          npm install -g cordova
+    - name: Instalar Cordova
+      run: npm install -g cordova
 
-          echo "Creando proyecto Cordova..."
-          cordova create proyecto com.synapse.ai "Synapse_AI_V3"
+    - name: Crear proyecto Cordova
+      run: |
+        cordova create proyecto com.synapse.ai Synapse_AI_V3
+        cd proyecto
+        cordova platform add android
 
-          cd proyecto
+        cordova plugin add cordova-plugin-network-information
+        cordova plugin add cordova-plugin-whitelist
 
-          echo "Agregando plataforma Android..."
-          cordova platform add android
+    - name: Copiar archivos de la app
+      run: |
+        rm -rf proyecto/www/*
+        cp -r www/* proyecto/www/
+        cp config.xml proyecto/config.xml
 
-          echo "Instalando plugins necesarios..."
-          cordova plugin add cordova-plugin-network-information
-          cordova plugin add cordova-plugin-whitelist
+    - name: Compilar APK firmada
+      run: |
+        cd proyecto
 
-          echo "Copiando archivos de la app..."
-          rm -rf www/*
-          cp -rv ${{ github.workspace }}/www/* www/
-          cp -f ${{ github.workspace }}/config.xml config.xml
+        cordova build android --release --device -- \
+        --keystore="${{ github.workspace }}/keysynapse.jks" \
+        --storePassword="Oliver12" \
+        --alias="synapsev3" \
+        --password="Oliver12"
 
-          echo "Compilando APK firmada..."
-          cordova build android --release --device -- \
-            --keystore="${{ github.workspace }}/keysynapse.jks" \
-            --storePassword="Oliver12" \
-            --alias="synapsev3" \
-            --password="Oliver12"
+    - name: Buscar APK generada
+      run: |
+        echo "Buscando APK..."
+        find proyecto -name "*.apk"
 
-      - name: Subir APK generada
-        uses: actions/upload-artifact@v4
-        with:
-          name: Synapse_AI_V3_APK_FIRMADA
-          path: proyecto/platforms/android/app/build/outputs/apk/release/*.apk
-          if-no-files-found: error
+    - name: Subir APK firmada
+      uses: actions/upload-artifact@v4
+      with:
+        name: Synapse_AI_V3_APK_FIRMADA
+        path: proyecto/platforms/android/app/build/outputs/apk/release/app-release.apk
+        if-no-files-found: error
